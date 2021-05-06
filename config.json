@@ -1,3 +1,5 @@
 {
-  "prefix": "geo "
+  "prefix": "geo ",
+  "quizTimeout": 60000,
+  "mTimeout": 1000
 }

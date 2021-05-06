@@ -5,3 +5,7 @@ module.exports.shuffleArray = function (array) {
   }
   return array;
 };
+
+module.exports.getRandElement = function (arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+};
