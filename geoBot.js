@@ -1,20 +1,30 @@
-const db = require("dotenv").config();
+require("dotenv").config();
 
 const Discord = require("discord.js");
 const client = new Discord.Client();
+const { prefix } = require("./config.json");
+const token = process.env.DISCORD_TOKEN;
 
-db.connect({
-  token: process.env.DISCORD_TOKEN,
-});
+const check = (msg, cmd) => msg.content === `${cmd}`;
 
 client.on("ready", () => {
-  console.log("Logged in as ${client.user.tag}!");
+  console.log(`Logged in as ${client.user.tag}!`);
 });
 
 client.on("message", (msg) => {
-  if (msg.content === "ping") {
-    msg.reply("pong");
+  //Verify prefix
+  if (!msg.content.startsWith(prefix) || msg.author.bot) return;
+  const args = msg.content.slice(prefix.length).trim().split("");
+
+  if (check(msg, "ping")) {
+    msg.channel.send("pong");
+  }
+  if (check(msg, "flags")) {
+    //execute flag game
+    msg.channel.send("Flag game started, ");
   }
 });
 
-client.login("ODM5NDEzMzAzMzc3MDAyNDk2.YJJSjw.zQna5I6_a8APE5OjEnuFHCOdlxc");
+// client.on("flags");
+
+client.login(token);
