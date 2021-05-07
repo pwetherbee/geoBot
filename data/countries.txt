@@ -112,7 +112,6 @@ KE|Kenya
 KI|Kiribati
 KP|North Korea
 KR|South Korea
-KV|Kosovo
 KW|Kuwait
 KG|Kyrgyzstan
 LA|Laos
