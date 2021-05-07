@@ -31,9 +31,11 @@ class FlagsView extends View {
   };
   generateEmbed = function (countryList, imgUrl, round = 1, score = 0) {
     return new Discord.MessageEmbed()
-      .setTitle(`Guess the flag! Round ${round}/${5} Score: ${score}`)
+      .setTitle(`Guess the flag!`)
+      .addField('Round', `${round}/${5}`, true)
+      .addField('Score', `${score}`, true)
       .setDescription(
-        `Enter the number corresponding to the country you choose. 1 minute per round!`
+        `Enter the number corresponding to the country you choose. \n1 minute per round!`
       )
       .setImage(imgUrl)
       .addFields(
@@ -52,7 +54,7 @@ class FlagsView extends View {
           const { countryName, correct, emoji } = rec;
           return {
             name: `Round ${i + 1}`,
-            value: `${emoji} ${countryName}: ${correct ? '😄' : '😢'}`,
+            value: `${emoji} ${countryName}: ${correct ? '✅' : '❌'}`,
           };
         })
       );

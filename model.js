@@ -35,6 +35,9 @@ module.exports.loadCountryData = async function (countryCode, tryAgain = true) {
     const res = await fetch(
       `https://restcountries.eu/rest/v2/alpha/${countryCode}`
     );
+
+    if (!res) return;
+
     const data = await res.json();
     this.state.country.name = data.name;
     this.state.country.code = data.alpha2Code;
