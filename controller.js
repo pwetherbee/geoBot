@@ -5,7 +5,7 @@ const model = require('./model.js');
 const FlagsView = require('./views/flagsView.js');
 const Discord = require('discord.js');
 const client = new Discord.Client();
-const token = process.env.DISCORD_TOKEN;
+const token = process.env.DISCORD_TOKEN_TEST;
 const { prefix, quizTimeout, mTimeout } = require('./config.json');
 const flagsView = require('./views/flagsView.js');
 let numRounds = 5;
@@ -20,10 +20,8 @@ client.on('message', async msg => {
   const command = args.shift().toLowerCase();
   if (command === 'flags') {
     //reset score
-    model.state.score = 0;
-    model.state.inProgress = true;
-    model.state.record = [];
-    await flagRound(msg, args, 1);
+    model.reset();
+    await flagRound(msg, args);
     // for (i = 0; i < 5; i++) await flagGame(msg, args, i + 1);
   }
 
@@ -49,87 +47,76 @@ client.on('message', async msg => {
 
 // const flagGame = async function (msg, args) {};
 
-const flagRound = async function (
-  msg,
-  args,
-  round = 1,
-  score = 0,
-  prev = null
-) {
+const flagRound = async function (msg, args, prev = null) {
   try {
     const country = model.getRandomCountry();
     await model.loadCountryData(country);
   } catch {
-    await flagRound(msg, args, round);
+    await flagRound(msg, args);
     return;
   }
+  const mcList =
+    args[0] === 'hard'
+      ? []
+      : model.getListOfRandomCountries(model.state.country.name, 3);
+  const params = [prev ? prev : msg, mcList, model.state];
 
-  let mcList = [model.state.country.name];
-  for (i = 0; i < 3; i++) {
-    mcList.push(model.getRandomCountry(false));
-  }
-  mcList = helpers.shuffleArray(mcList);
   if (!prev) {
-    prev = await FlagsView.renderQuestionList(
-      msg,
-      mcList,
-      model.state.country.flag,
-      round,
-      score
-    );
+    prev = await FlagsView.renderQuestionList(...params);
   } else {
     try {
-      prev = await FlagsView.updateQuestionList(
-        prev,
-        mcList,
-        model.state.country.flag,
-        round,
-        score
-      );
-    } catch {
-      console.error('Couldnt update embed message');
+      console.log(prev.author, msg.author);
+      prev = await FlagsView.updateQuestionList(...params);
+    } catch (err) {
+      console.error('Couldnt update embed message: ', err);
     }
   }
-  const filter = m => m.author.id === msg.author.id && !isNaN(m.content);
+  const filter = m =>
+    m.author.id === msg.author.id &&
+    ((args[0] === 'hard' && m.content != prefix + 'hint') || !isNaN(m.content));
   msg.channel
     .awaitMessages(filter, {
       max: 1,
       time: quizTimeout,
       errors: ['time'],
     })
-    .then(collected => {
-      if (mcList[collected.first().content - 1] === model.state.country.name) {
-        msg.channel
-          .send(`Correct! That is the flag of ${model.state.country.name}!`)
-          .then(m => setTimeout(() => m.delete(), mTimeout));
-        collected.first().react('✅');
-        score++;
-        setTimeout(() => collected.first().delete(), mTimeout);
-        model.addToRecord(model.state.country, true);
-        return;
-      }
-      msg.channel
-        .send(`Wrong answer! That flag belongs to ${model.state.country.name}`)
-        .then(m => setTimeout(() => m.delete(), mTimeout));
-      collected.first().react('❌');
-      model.addToRecord(model.state.country, false);
-      setTimeout(() => collected.first().delete(), mTimeout);
-    })
+    .then(collected =>
+      handleResult(
+        msg,
+        collected,
+        (args[0] === 'hard'
+          ? collected.first().content
+          : mcList[collected.first().content - 1]) === model.state.country.name
+      )
+    )
     .then(async () => {
-      if (round < numRounds) {
-        setTimeout(
-          async () => await flagRound(msg, args, round + 1, score, prev),
-          mTimeout
-        );
+      if (model.state.round < numRounds) {
+        model.state.round++;
+        setTimeout(async () => await flagRound(msg, args, prev), mTimeout);
       } else {
-        flagsView.renderCredits(msg, model.state.record, score);
+        flagsView.renderCredits(msg, model.state);
         model.state.inProgress = false;
       }
     })
-    .catch(() => {
+    .catch(err => {
+      console.error(err);
       msg.channel.send('Times up!');
       model.state.inProgress = false;
     });
+};
+
+const handleResult = function (msg, collected, isCorrect) {
+  msg.channel
+    .send(
+      `${isCorrect ? 'Correct!' : 'Wrong answer!'} That flag belongs to ${
+        model.state.country.name
+      }!`
+    )
+    .then(m => setTimeout(() => m.delete(), mTimeout));
+  collected.first().react(isCorrect ? '✅' : '❌');
+  model.state.score = model.state.score + isCorrect ? 1 : 0;
+  setTimeout(() => collected.first().delete(), mTimeout);
+  model.addToRecord(model.state.country, isCorrect);
 };
 
 const getHint = function () {

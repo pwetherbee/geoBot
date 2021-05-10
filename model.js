@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 const countryPath = './data/countries.txt';
-const flagURL = 'https://flagcdn.com/256x192/za.png';
 
+const helpers = require('./helpers.js');
 const { countryCodeEmoji } = require('country-code-emoji');
 const fs = require('fs');
 const countryList = fs.readFileSync(countryPath).toString().split('\n');
@@ -27,6 +27,14 @@ module.exports.getRandomCountry = function (code = true) {
   let [countryCode, name] = countryData.split('|');
   if (code) return countryCode;
   return removePrefix(fixName(name));
+};
+
+module.exports.getListOfRandomCountries = function (first = [], count = 1) {
+  const cList = first.length ? [first] : [];
+  for (i = 0; i < count; i++) {
+    cList.push(this.getRandomCountry(false));
+  }
+  return helpers.shuffleArray(cList);
 };
 
 module.exports.loadCountryData = async function (countryCode, tryAgain = true) {
@@ -61,6 +69,24 @@ module.exports.addToRecord = function (country, result) {
     emoji: countryCodeEmoji(country.code),
     correct: result,
   });
+};
+
+module.exports.reset = function () {
+  this.state = {
+    score: 0,
+    round: 1,
+    inProgress: true,
+    coords: [],
+    country: {
+      name: '',
+      code: '',
+      flag: '',
+      languages: '',
+      currency: '',
+      region: '',
+    },
+    record: [],
+  };
 };
 
 const fixName = function (name) {

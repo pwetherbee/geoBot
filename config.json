@@ -1,5 +1,5 @@
 {
-  "prefix": "geo ",
+  "prefix": "gtest ",
   "quizTimeout": 60000,
   "mTimeout": 2000
 }

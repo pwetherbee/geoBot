@@ -1,43 +1,31 @@
 const Discord = require('discord.js');
 const View = require('./View.js');
 class FlagsView extends View {
-  renderQuestionList = async function (
-    ctx,
-    countryList,
-    imgUrl,
-    round = 1,
-    score
-  ) {
-    const embed = this.generateEmbed(countryList, imgUrl, round, score);
+  renderQuestionList = async function (ctx, countryList, info) {
+    const embed = this.generateEmbed(countryList, info);
     return await ctx.channel.send(embed);
   };
-  updateQuestionList = async function (
-    ctx,
-    countryList,
-    imgUrl,
-    round = 1,
-    score = 0
-  ) {
-    const embed = this.generateEmbed(countryList, imgUrl, round, score);
+  updateQuestionList = async function (ctx, countryList, info) {
+    const embed = this.generateEmbed(countryList, info);
     return await ctx.edit(embed);
   };
-  renderCredits = function (ctx, record, score) {
+  renderCredits = function (ctx, info) {
     try {
-      const embed = this.generateCreditsEmbed(record, score);
+      const embed = this.generateCreditsEmbed(info);
       ctx.channel.send(embed);
     } catch (err) {
       console.error('Embed render failed', err);
     }
   };
-  generateEmbed = function (countryList, imgUrl, round = 1, score = 0) {
+  generateEmbed = function (countryList, info) {
     return new Discord.MessageEmbed()
       .setTitle(`Guess the flag!`)
-      .addField('Round', `${round}/${5}`, true)
-      .addField('Score', `${score}`, true)
+      .addField('Round', `${info.round}/${5}`, true)
+      .addField('Score', `${info.score}`, true)
       .setDescription(
         `Enter the number corresponding to the country you choose. \n1 minute per round!`
       )
-      .setImage(imgUrl)
+      .setImage(info.country.flag)
       .addFields(
         ...countryList.map((country, i) => {
           return { name: `${i + 1}) `, value: country };
@@ -45,12 +33,12 @@ class FlagsView extends View {
       )
       .setFooter("Stuck? Enter 'geo hint' for a hint!");
   };
-  generateCreditsEmbed = function (record, score) {
+  generateCreditsEmbed = function (info) {
     let embed = new Discord.MessageEmbed()
       .setTitle('Thanks for playing!')
-      .addField(`Your score`, `${score} / 5`, ' ')
+      .addField(`Your score`, `${info.score} / 5`, ' ')
       .addFields(
-        ...record.map((rec, i) => {
+        ...info.record.map((rec, i) => {
           const { countryName, correct, emoji } = rec;
           return {
             name: `Round ${i + 1}`,
