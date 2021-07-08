@@ -89,6 +89,28 @@ module.exports.reset = function () {
   };
 };
 
+module.exports.getStreetViewImage = async function (key) {
+  const maxTrys = 5;
+  let i = 0;
+  try {
+    while (i < maxTrys) {
+      i++;
+      const coords = await getCoordsWithinCountry();
+      const area = await getNearestArea(coords);
+      console.log(area);
+      const res =
+        await fetch(`https://maps.googleapis.com/maps/api/streetview?size=1000x600&location=${coords[0]}, ${coords[1]}
+      &fov=100&heading=70&pitch=0&radius=100&return_error_codes=true
+      &key=${key}`);
+      if (res.statusText === 'OK') return res.url;
+      console.log(res.statusText);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+  return '❌ Error Occured';
+};
+
 const fixName = function (name) {
   name = name.trim();
   if (name.includes(',')) {
@@ -101,4 +123,30 @@ const fixName = function (name) {
 const removePrefix = function (name) {
   if (!name.includes('(')) return name;
   return name.split('(')[0];
+};
+
+const getCoordsWithinCountry = async function () {
+  try {
+    const res = await fetch(`https://api.3geonames.org/?randomland=yes&json=1`);
+    const data = await res.json();
+    console.log(data);
+    return [data.major.inlatt, data.major.inlongt];
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const getNearestArea = async function (coords) {
+  const res = await fetch(
+    `https://api.3geonames.org/${coords[0]},${coords[1]}.json`
+  );
+  const data = await res.json();
+  const country = await getCountryByCode(data.nearest.state);
+  return [country, data.nearest.city];
+};
+
+const getCountryByCode = async function (code) {
+  const res = await fetch(`https://restcountries.eu/rest/v2/alpha/${code}`);
+  const data = await res.json();
+  return data.name;
 };

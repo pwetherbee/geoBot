@@ -5,9 +5,11 @@ const model = require('./model.js');
 const FlagsView = require('./views/flagsView.js');
 const Discord = require('discord.js');
 const client = new Discord.Client();
-const token = process.env.DISCORD_TOKEN;
+const token = process.env.DISCORD_TOKEN_TEST;
+const streetViewToken = process.env.GOOGLE_API_KEY;
 const { prefix, quizTimeout, mTimeout } = require('./config.json');
 const flagsView = require('./views/flagsView.js');
+const { default: fetch } = require('node-fetch');
 let numRounds = 5;
 
 client.on('ready', () => {
@@ -23,6 +25,10 @@ client.on('message', async msg => {
     model.reset();
     await flagRound(msg, args);
     // for (i = 0; i < 5; i++) await flagGame(msg, args, i + 1);
+  }
+  if (command === 'world') {
+    const imageURL = await model.getStreetViewImage(streetViewToken);
+    await msg.channel.send(imageURL);
   }
 
   if (command === 'hint') {
@@ -46,6 +52,8 @@ client.on('message', async msg => {
 });
 
 // const flagGame = async function (msg, args) {};
+
+const countryGuess = async function (msg, args) {};
 
 const flagRound = async function (msg, args, prev = null) {
   try {
